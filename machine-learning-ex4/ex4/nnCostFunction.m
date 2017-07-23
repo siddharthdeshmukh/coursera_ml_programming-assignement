@@ -38,6 +38,30 @@ Theta2_grad = zeros(size(Theta2));
 %         variable J. After implementing Part 1, you can verify that your
 %         cost function computation is correct by verifying the cost
 %         computed in ex4.m
+%x = [ones(rows(X),1) X];
+%A = sigmoid(x * Theta1');
+%a = [ones(rows(A),1) A];
+
+x_with_bias_unit = [ones(m,1) X];
+
+%h_of_theta_x = sigmoid(a * Theta2');
+% summation = sum(-1 * y' * log(h_of_theta_x) - ((1-y')* log(1 -h_of_theta_x)));
+for i=1:m
+  X_i = x_with_bias_unit(i,:);
+  G_of_zi = sigmoid(X_i * Theta1');
+ % activation_unit_with_bias_unit = [ones(m,1) G_of_z_i];
+  h_of_theta_Xi = sigmoid([1 G_of_zi] * Theta2');
+  y_i = zeros(1,num_labels);
+	y_i(y(i)) =1;
+  summation = sum(-1 * y_i .* log(h_of_theta_Xi) - ((1-y_i) .* log(1 -h_of_theta_Xi)));
+  J= J + summation;
+end;  
+J = (1/m )* J;
+Theta1_without_bias_term = Theta1(:,2:input_layer_size+1);
+Theta2_without_bias_term = Theta2(:,2:hidden_layer_size+1);
+
+%J = J + (lambda/(2 * m)* (sum(Theta1_without_bias_term.^2) + sum(Theta2_without_bias_term.^2)))
+J = J + (lambda / (2 * m) * (sum(sumsq(Theta1_without_bias_term)) + sum(sumsq(Theta2_without_bias_term))));
 %
 % Part 2: Implement the backpropagation algorithm to compute the gradients
 %         Theta1_grad and Theta2_grad. You should return the partial derivatives of
@@ -53,6 +77,26 @@ Theta2_grad = zeros(size(Theta2));
 %         Hint: We recommend implementing backpropagation using a for-loop
 %               over the training examples if you are implementing it for the 
 %               first time.
+delta_accum_1 = zeros(size(Theta1));
+delta_accum_2 = zeros(size(Theta2));
+for j= 1:m
+  a_1 = x_with_bias_unit(j,:);
+  z_2 = a_1 * Theta1';
+  a_2 = sigmoid(z_2);
+  z_3 = [1 a_2] * Theta2' ;
+  a_3 = sigmoid(z_3);
+  y_i = zeros(1,num_labels);
+	y_i(y(j)) =1;
+  delta_3 = a_3 - y_i ; 
+  delta_2 = delta_3 * Theta2 .* sigmoidGradient([1 z_2]);
+  delta_accum_2 = delta_accum_2 + delta_3' * [1 a_2];
+  delta_accum_1 = delta_accum_1 + delta_2(2:end)' * a_1 ;
+  
+end;
+Theta1_grad = delta_accum_1 / m;
+Theta2_grad = delta_accum_2 / m;
+  
+  
 %
 % Part 3: Implement regularization with the cost function and gradients.
 %
@@ -63,24 +107,9 @@ Theta2_grad = zeros(size(Theta2));
 %
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 % -------------------------------------------------------------
+Theta1_grad(:, 2:input_layer_size+1) = Theta1_grad(:, 2:input_layer_size+1) + lambda / m * Theta1(:, 2:input_layer_size+1);
+Theta2_grad(:, 2:hidden_layer_size+1) = Theta2_grad(:, 2:hidden_layer_size+1) + lambda / m * Theta2(:, 2:hidden_layer_size+1);
 
 % =========================================================================
 
